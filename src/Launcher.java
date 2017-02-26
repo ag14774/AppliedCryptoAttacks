@@ -17,12 +17,12 @@ public class Launcher {
 	}
 
 	public void setupStage1(String conf) {
-		BufferedReader in = null;
 		String[] file = null;
-		try {
-			in = new BufferedReader(new FileReader(conf));
+		try (BufferedReader in = new BufferedReader(new FileReader(conf))){
 			file = in.lines().toArray(size -> new String[size]);
 		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		attacker = new OAEPAttacker(target_out, target_in, file[0], file[1], file[2], file[3]);

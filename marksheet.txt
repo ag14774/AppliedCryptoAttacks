@@ -46,7 +46,7 @@ generality, realism, or style of a solution.
               - solution quality wrt. efficiency, robustness etc.    ( 30%)
               - analysis questions                                   ( 30%)
 
-              target material : [...]
+              target material : 9F02E9D9BE7F27E1B452F046379EC207636F177B
 
 [?] Stage 2 : an attack based on execution time
               - correct target material                              ( 40%)
