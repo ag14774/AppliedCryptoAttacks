@@ -5,12 +5,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class OAEPAttacker implements IAttacker {
-	
-	/* Move these to AbstractAttacker */
-	private BufferedReader target_out = null;
-	private PrintWriter target_in = null;
-	private int interactions;
+public class OAEPAttacker extends AbstractAttacker {
 	
 	private BigInteger N;
 	private BigInteger e;
@@ -20,16 +15,12 @@ public class OAEPAttacker implements IAttacker {
 	private int k; //How many bytes
 	private BigInteger B;
 	
-	private byte[] recovered_bytes;
-	
 	
 	public OAEPAttacker(BufferedReader target_out, PrintWriter target_in,
 						String N_hex, String e_hex, String label_hex,
 						String ciphertext_hex) {
-		/*First 3 lines to abstract class*/
-		this.target_out = target_out;
-		this.target_in = target_in;
-		this.interactions = 0;
+		
+		super(target_out, target_in);
 		
 		this.N = new BigInteger(N_hex, 16);
 		this.e = new BigInteger(e_hex, 16);
@@ -51,19 +42,18 @@ public class OAEPAttacker implements IAttacker {
 	}
 	
 	private int interact(final String label, final String ciphertext) {
-		target_in.println(label);
-		target_in.println(ciphertext);
+		this.target_in.println(label);
+		this.target_in.println(ciphertext);
+		this.target_in.flush();
 		int r = 0;
 		try {
-			r = Integer.parseInt(target_out.readLine());
+			r = Integer.parseInt(this.target_out.readLine());
 		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		interactions += 1;
+		this.interactions += 1;
 		//System.out.println("Reply: "+r);
 		return r;
 	}
@@ -73,23 +63,6 @@ public class OAEPAttacker implements IAttacker {
 		return interact("", ciphertext_str);
 	}
 
-	/*This in abstract class*/
-	@Override
-	public String getRecoveredMaterial() {
-		String s = "";
-		for(byte b : this.recovered_bytes){
-			s += String.format("%02X", b);
-		}
-		return s;
-	}
-
-	/*This is abstract class*/
-	@Override
-	public int getInteractions() {
-		return interactions;
-	}
-
-	/*This is abstract in abstract class*/
 	@Override
 	public void attack() {
 		//int r = interact(ciphertext);
@@ -101,6 +74,7 @@ public class OAEPAttacker implements IAttacker {
 		
 		byte[] EM = I2OSP(plaintext, this.k);
 		this.recovered_bytes = OAEPDecode(EM);
+		
 	}
 	
 	/**
@@ -140,10 +114,15 @@ public class OAEPAttacker implements IAttacker {
 	 * @return
 	 */
 	private BigInteger step3(BigInteger f2) {
+		/* Depending on how fast the device is bruteforcing after
+		 * a certain point has passed, might be faster. Here,
+		 * I think it is slightly slower
+		 **/
+		int bruteforce_thresh = 128; //Bruteforce the last 128 numbers
 		BigInteger TWO = BigInteger.valueOf(2);
 		BigInteger m_min = ceilDivide(N, f2);
 		BigInteger m_max = N.add(B).divide(f2);
-		while(m_min.compareTo(m_max) != 0){
+		while(m_max.subtract(m_min).compareTo(BigInteger.valueOf(bruteforce_thresh)) > 0){
 			BigInteger ftmp = TWO.multiply(B).divide(m_max.subtract(m_min));
 			BigInteger i = ftmp.multiply(m_min).divide(N);
 			BigInteger f3 = ceilDivide(i.multiply(N), m_min);
@@ -154,11 +133,12 @@ public class OAEPAttacker implements IAttacker {
 			else {
 				m_max = i.multiply(N).add(B).divide(f3);
 			}
-			System.out.println(f3);
+			// System.out.println(f3);
 		}
-		if(m_min.modPow(e, N).compareTo(ciphertext) != 0) {
-			System.err.println("Incorrect plaintext recovered..Terminating!");
-			System.exit(-1);
+
+		for(int i=0;i < bruteforce_thresh && m_min.compareTo(m_max) < 0; i++) {
+			if(m_min.modPow(e, N).compareTo(ciphertext) == 0) break;
+			m_min = m_min.add(BigInteger.ONE);
 		}
 		
 		return m_min;

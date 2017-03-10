@@ -1,11 +1,108 @@
 Q.1 Consider the parameters N = 3551, e = 5, d = 1373, and c = 888, all
-    represented in decimal.  Use them to explain, in your own words, the
-    principle of this attack (e.g., how and why it works).
+    represented in decimal.  Use them to explain, in your own words,
+    the principle of this attack (e.g., how and why it works).
+
+An OAEP encoded message can take up to one byte less than the modulus. For
+example in our case where N = 3551, the modulus uses k = ceil(log256(N)) =
+2 bytes. This means that an OAEP encoded will use 1 byte or alternatively
+m < B where B = 2^(8(2-1)) = 256.
+
+Since our hypothetical device outputs a distinct error code for when the
+ciphertext c' passed does not decrypt to a correctly OAEP encoded message
+(when the first byte is not 0x00 i.e. c'^d mod N >= B, we can use this
+to perform a procedure similar to binary search to search the message
+space until we find the OAEP encoded message m of any ciphertext c.
+
+Note that we can choose any multiple f and send the ciphertext f^e * c
+(mod N) to our device/oracle. The device will decrypt this by raising
+it to 'd' resulting in the message f*m (mod N). Then the oracle will
+check to see if this is >=B and respond appropriately.
+
+Initially we know that our message m corresponding to our ciphertext
+has to be in the range [0,256) since it is a valid message. The first
+stage is to determine in between which powers of 2 does the message m
+range. We do that by selecting a number f1 = 2 and sending to the oracle
+c*f1^e = 888*2^5 = 8 (mod 3551). The oracle responds with < B. Since we
+multiplied the underlying message behind the ciphertext by 2 we know
+that the range of 2*m is [0, 512). However, using the reply from the
+oracle we limit this again back to [0,256). We double our multiplier f1 =
+2*2 = 4 to bring f1*m back to [0, 512). We perform the same procedure by
+sending 888*4^5 (mod 3551) = 256 but this time the oracle replies with >=
+B. This limits the possible range of 4*m to [256, 512). Alternatively
+64<=m<128 and therefore 128<=2m<256.
+
+For the next step we pick a number f2 = floor((N+B)/B) * (f1/2) =
+28. This ensures that f2*m is greater than B. More specifically, this is
+in the range [(N+B)/2, N+B) = [1903, 3807). This attack makes the assumption
+that 2B<N so B<N/2. If we now try sending f2^e*c(mod N) to the oracle,
+the oracle will decrypt this to f2*m mod N. Since we know that f2*m is
+greater than B, if the oracle replies with <B, the only possibility is
+that f2*m was greater than N and therefore wrapped around and became less
+than B. Let's try it: 888*28^5 = 2331. We send this to the oracle and the
+oracle replies back with >=B. This means there was no wrap around which
+implies that 1903<=f2*m<3551. We proceed by adding f1/2=2 to the current
+f2 to bring it back to the range [1903, 3807). f2 = 30 and 888*30^5 =
+2790 (mod N). We send this to the oracle and this time we learn that it
+is <B and therefore 3551<=f2*m<3807 with f2 = 30.
+
+Dividing everything by f2, we now know that the message m is in the
+range [m_min, m_max) = [119, 126). We now need to calculate a number
+f3 that will bring f3*m in the range [i*N, i*N+2B) for some integer
+i. Since the oracle does all the computations mod N, this means that
+if a number is between i*N and i*N+B(excluding) it will reduce to a
+number between 0 and B(excluding) and the oracle will therefore reply
+with <B. If a number relies between i*N+B and i*n+2B then it will reply
+>=B. We start by calculating a number ftmp = floor(2*B/(m_max-m_min)) =
+73. This value is approximately double f2 which means that ftmp*m is also
+double(approx. 2B). We then need to select the integer i such that i*N+B
+~ ftmp*m_min+B will be approximately the midpoint of the range we are
+trying to achieve. We set i = floor(ftmp*m_min/N) = 2. Then we pick f3 =
+ceil(i*N/m_min) = 60. We have now succeded in bringing the range of f3*m
+to [i*N, i*N+2B) = [7102, 7614). We can now use the oracle as explained
+above to halve the search space by sending 888*60^5 = 505 (mod N) to the
+oracle. The oracle replies with >=B and therefore we know that the range
+of f3*m is [i*N+B, i*N+2B) = [7358, 7614). Since we have changed the
+lower bound we also need to update m_min by dividing the new lower bound
+by f3. This brings m_min to the middle of the previous range: m_min =
+123. Our new range for m is [123, 126). We repeat the same procedure by
+recalculating ftmp, i, f3. ftmp = 170, i=5 and f3=145. This realigns our
+range so that i*N+B is now again the midpoint and therefore the oracle
+can now be used to halve it. We send 888*145^5 = 1118 (mod N). The oracle
+replies back with <B. Our new range is now [i*N, i*N+B) = [17755, 18011)
+and therefore m is now within the range [123, 124). At this point we can
+stop since it is clear that the OAEP encoded message m = 123. In addition,
+it is also possible to stop interacting with the device once the message
+range is small enough and find the correct message by trial and error.
+
+We can the apply the OAEP decoding procedure to recover the secret.
+
 Q.2 To prevent the attack, the vendor suggests altering the software: the
-    idea is that no matter what error occurs, the same error code will be
-    produced.  Explain whether (and why, or why not) this change alone is
-    sufficient.
+    idea is that no matter what error occurs, the same error code will
+    be produced.  Explain whether (and why, or why not) this change
+    alone is sufficient.
+
+This change alone is not sufficient. Since the device stops as soon as
+an error is found, it means that it takes longer to come across certain
+errors that others. Therefore, even if the error code is always the same,
+an attacker can time how long it was required for the error to occur
+and use this information to distinguish between the errors. To prevent
+this attack we need to make sure that the device always takes the same
+time to output the error code.
+
 Q.6 RSA has a homomorphic property: explain what this means, and how it
     relates to this attack.
+
+The homomorphic property of RSA means that we can perform computations on
+the ciphertext and alter the result of the decryption in a predictable
+way. For example if we take two ciphertexts c1 and c2 and decrypt the
+ciphertext c1*c2, we know that the resulting decryption is going to be
+m1*m2. For this attack we use this property when creating the ciphertexts
+to be passed to the oracle. We want to learn information about a certain
+multiple f of the ciphertext c. To do that we can create the ciphertext
+c*f^e (mod N). Because of the homomorphic property, we know that this
+decrypts to (c*f^e)^d (mod N) = (c^d)*f^(ed) (mod N) = m*f (mod N). This
+way we can ask the oracle to decrypt any multiple of c.
+
 Q.7 Side-channel attacks are often categorised as being either simple or
     differential: how would categorise this attack, and why?
+

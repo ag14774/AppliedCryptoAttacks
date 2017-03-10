@@ -29,7 +29,15 @@ public class Launcher {
 	}
 
 	public void setupStage2(String conf) {
-		attacker = new TimeAttacker(target_out, target_in);
+		String[] file = null;
+		try (BufferedReader in = new BufferedReader(new FileReader(conf))){
+			file = in.lines().toArray(size -> new String[size]);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		attacker = new TimeAttacker(target_out, target_in, file[0], file[1]);
 
 	}
 
