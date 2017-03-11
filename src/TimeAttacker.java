@@ -205,7 +205,7 @@ public class TimeAttacker extends AbstractAttacker {
 	private int attackNextBit(BigInteger[] mont0_c, BigInteger[] mont1_c, BigInteger[] mont_orig,
 							  double times_std, final int[] times) {
 		//from the t table(Critical values of the t distribution)
-		//One-tail test 0.2 https://www2.palomar.edu/users/rmorrissette/Lectures/Stats/ttests/TTable.jpg
+		//One-tail test 0.1 https://www2.palomar.edu/users/rmorrissette/Lectures/Stats/ttests/TTable.jpg
 		//Degrees of freedom n1+n2-2=times.length-2
 		final double t_test_1= 1.282; 
 

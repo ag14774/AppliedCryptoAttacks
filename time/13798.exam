@@ -1,14 +1,68 @@
 Q.1 The vendor of the attack target is concerned that news of this attack
     could scare off potential customers; they will make any alteration
-    necessary (in software or hardware) to prevent the attack.  Explain the
-    options they have, and which one you would recommend.
+    necessary (in software or hardware) to prevent the attack.
+    Explain the options they have, and which one you would recommend.
+
+Timing differences will always exist in a very low level. For example,
+AND gates might not wait for other inputs if one is zero. Nevertheless,
+this specific attack can be prevented by changing their exponentiation
+algorithm to something more advanced, like a sliding window
+exponentiation. This method also leaks information, however, this can
+be prevented by replacing the multiplication part of the algorithm with
+the montgomery ladder approach. Secondly, the CRT can be used instead
+of a standard exponentiation mod N. Since the attacker does not know
+p and q, she/he cannot simulate the steps of the attack. In addition,
+montgomery multiplication can be modified so that it always performs
+the subtraction at the end, discarding the result if it is not needed.
+
 Q.2 The vendor of the attack target is concerned that a similar attack may
-    also apply to their implementation of ElGamal encryption.  Explain the
-    potential for such an attack, and how it differs wrt.  the case of RSA.
+    also apply to their implementation of ElGamal encryption.  Explain
+    the potential for such an attack, and how it differs wrt.  the case
+    of RSA.
+
+It is possible to carry out such an attack on ElGamal. However, to ensure
+that no other factors can affect the timings, the second ciphertext c2
+from the tuple (c1,c2) should be held constant since the computation
+that is carried out is c2/c1^x where x is the secret key we want to
+recover. Moreover, we need to know more details on the implementation of
+the decryption algorithm. For example, we need to know whether a smaller
+subgroup of order q is used during decryption. If yes, it is possible
+that what we are actually recovering is -x mod q instead of x. However,
+the true x can very easily be recovered once -x is found.
+
 Q.3 Your implementation of this attack will use some form of statistical
-    test.  Explain what test you have used, how it works, and also how it
-    compares with at least one alternative.
+    test.  Explain what test you have used, how it works, and also how
+    it compares with at least one alternative.
+
+The first step is to calculate the Point biserial correlation
+coefficient. This is similar to Pearson's coefficient but it is
+adapted for when one of the variables is binary. This is calculated
+using r=[(M1-M0)/s]*sqrt(n1*n0/n(n-1)) for each of the two cases(bit=1
+vs bit=0) where M1=mean of timings with reduction, M0=mean of timings
+with no reduction s=sample standard deviation of timings, n1=number of
+ciphertexts in the reduction group, n0=number of ciphertexts in the
+'no-reduction' group. Once we have two correlation values we can now
+test two cases: 1)H0=bit is 1 H1=bit is 0 2)H0=bit is 0 H1=bit is 1
+
+The t-value for each(t1 and t2) of the two cases is calculated using
+t=r*sqrt((n-2)/(1-r*r)). We compare those t-values with a threshold
+value(1.282) which is the t-value for the one-tail test with critical
+value 0.1. The the implementation follows the following rules:
+
+-if none of them are greater than the threshold, then the bit is marked
+ as 'unsure'. The bit is the set to 1 and if that doesn't work either,
+ then an error correcting procedure is followed where we backtrack to
+ previous bits.
+
+-if only one of the two t-values are greater, then the bit is set to
+ 1 or 0 depending on which of the two t-values passed the threshold.
+
+-if both are greater, then the best one is chosen.
+
+If a lot of errors start to occur, we increase the sample size and we
+start again from bit 0.
+
 Q.5 The level of noise, n, within measurements of execution time will
     influence the number of measurements, m, required for a successful
-    attack.  Explain what the relationship between n and m is (i.e., how
-    you expect m to grow as n grows).
+    attack.  Explain what the relationship between n and m is (i.e.,
+    how you expect m to grow as n grows).
