@@ -31,9 +31,9 @@ sending 888*4^5 (mod 3551) = 256 but this time the oracle replies with >=
 B. This limits the possible range of 4*m to [256, 512). Alternatively
 64<=m<128 and therefore 128<=2m<256.
 
-For the next step we pick a number f2 = floor((N+B)/B) * (f1/2) =
-28. This ensures that f2*m is greater than B. More specifically, this is
-in the range [(N+B)/2, N+B) = [1903, 3807). This attack makes the assumption
+For the next step we pick a number f2 = floor((N+B)/B) * (f1/2) = 28. This
+ensures that f2*m is greater than B. More specifically, this is in the
+range [(N+B)/2, N+B) = [1903, 3807). This attack makes the assumption
 that 2B<N so B<N/2. If we now try sending f2^e*c(mod N) to the oracle,
 the oracle will decrypt this to f2*m mod N. Since we know that f2*m is
 greater than B, if the oracle replies with <B, the only possibility is
@@ -106,3 +106,6 @@ way we can ask the oracle to decrypt any multiple of c.
 Q.7 Side-channel attacks are often categorised as being either simple or
     differential: how would categorise this attack, and why?
 
+The information that is being leaked does not *directly* reveal the
+message. The attack involves some analysis using a mathematical model,
+therefore it is a differential side channel attack.
