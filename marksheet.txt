@@ -53,7 +53,7 @@ generality, realism, or style of a solution.
               - solution quality wrt. efficiency, robustness etc.    ( 30%)
               - analysis questions                                   ( 30%)
 
-              target material : [...]
+              target material : ABD29CAB8ED24EC9
 
 [?] Stage 3 : an attack based on an injected fault
               - correct target material                              ( 40%)
@@ -80,6 +80,15 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-[...]
+Compile with:
+make
+and run with a command of the form: 
+java -cp bin/. Launcher stage1 oaep/13798.D oaep/13798.conf
+
+or
+compile with:
+make jar(after running make)
+and run with
+java -jar Launcher.jar stage1 oaep/13798.D oaep/13798.conf
 
 -------------------------------------------------------------------------------

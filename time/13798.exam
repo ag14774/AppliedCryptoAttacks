@@ -14,6 +14,7 @@ of a standard exponentiation mod N. Since the attacker does not know
 p and q, she/he cannot simulate the steps of the attack. In addition,
 montgomery multiplication can be modified so that it always performs
 the subtraction at the end, discarding the result if it is not needed.
+This will result in montgomery multiplication having a constant time.
 
 Q.2 The vendor of the attack target is concerned that a similar attack may
     also apply to their implementation of ElGamal encryption.  Explain
@@ -66,3 +67,11 @@ Q.5 The level of noise, n, within measurements of execution time will
     influence the number of measurements, m, required for a successful
     attack.  Explain what the relationship between n and m is (i.e.,
     how you expect m to grow as n grows).
+
+Noise n will increase the standard deviation of the samples. Since
+standard deviation is used as a divisor in the calculation of the point
+biserial correlation coefficient, it will cause the said coefficient
+to get smaller. In turn, this will cause the t_values to be smaller and
+therefore the attacker will not be able to make a confident decision on
+what the next bit is. Selecting a bigger sample size m, can help bring
+the standard deviation back down.
