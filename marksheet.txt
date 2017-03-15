@@ -41,14 +41,14 @@ outside this list can warrant an increase/decrease in marks, with examples
 including hard to quantify features such as the efficiency, robustness, 
 generality, realism, or style of a solution.
 
-[?] Stage 1 : an attack based on error messages
+[X] Stage 1 : an attack based on error messages
               - correct target material                              ( 40%)
               - solution quality wrt. efficiency, robustness etc.    ( 30%)
               - analysis questions                                   ( 30%)
 
               target material : 9F02E9D9BE7F27E1B452F046379EC207636F177B
 
-[?] Stage 2 : an attack based on execution time
+[X] Stage 2 : an attack based on execution time
               - correct target material                              ( 40%)
               - solution quality wrt. efficiency, robustness etc.    ( 30%)
               - analysis questions                                   ( 30%)
