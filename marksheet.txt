@@ -91,4 +91,14 @@ make jar(after running make)
 and run with
 java -jar Launcher.jar stage1 oaep/13798.D oaep/13798.conf
 
+
+For Stage 2:
+The number of samples is set to 3000. This is enough for the attack to run without
+any trouble. However, the code also includes some error correction logic. To see
+this in action, reduce the number of samples to 1000. When the statistic is not
+reliable(say for bit x), it will try setting bit x to 1 and continue.
+If we cannot reliably decide what the x+1 bit is, then we backtrack back and flip
+bit x again. We continue with bit x+1 but if the results are not improved, we
+backtrack to bit x-1, flip it and continue and so on and so forth.
+If a lot of errors accumulate, then we reset to 0 and try again with more samples.
 -------------------------------------------------------------------------------

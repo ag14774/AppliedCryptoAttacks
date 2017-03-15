@@ -75,7 +75,7 @@ public class TimeAttacker extends AbstractAttacker {
 	
 	@Override
 	public void attack() {
-		int num = 3000;
+		int num = 2500; //<--TRY THIS WITH 500(it will be increased to 1000 in the first step of the loop)
 		BigInteger mont_orig[]  = null;
 		BigInteger mont_curr[]  = null;
 		BigInteger msgs[]	    = null;
@@ -164,10 +164,10 @@ public class TimeAttacker extends AbstractAttacker {
 					total_errors++;
 					i++;
 				}
-				else {
+				else { //error correction
 					i = i - consecutive_errors;
 					if(i == 0) continue;
-					if(total_errors > 25) {
+					if(total_errors > 100) { //change this number so it is dependent on the number of bits of N instead of constant
 						System.out.println("Too many errors! Result is unreliable..Trying again...");
 						i = 0;
 						continue;
@@ -175,19 +175,28 @@ public class TimeAttacker extends AbstractAttacker {
 					System.out.println("backtracking to bit " + i + "...");
 					int newbit = 1 - (s.charAt(i) - '0'); //flip
 					System.out.println("Attacking bit "+i+"... flipping bit..trying with " + newbit);
-					for(int j = 0; j<=consecutive_errors; j++){
-						mont_curr = history.pop();
-						ctx = ctx_history.pop();
+					for(int j = 0; j<consecutive_errors; j++){
+						history.pop();
+						ctx_history.pop();
 					}
+					mont_curr = history.peek();
+					ctx = ctx_history.peek();
+					
 					ctx = model.montMul(ctx, ctx);
 					if(newbit == 1) {
 						ctx = model.montMul(ctx, mont_orig[0]);
-						BigInteger[] temp = mont_curr;
-						mont_curr = mont_curr1;
-						mont_curr1 = temp;
+						for(int x=0;x<times.length;x++) {
+							mont_curr[x] = model.montMul(mont_curr[x], mont_orig[x]);
+							mont_curr[x] = model.montMul(mont_curr[x], mont_curr[x]);
+						}
+					}
+					else {
+						for(int x=0;x<times.length;x++) {
+							mont_curr[x] = model.montMul(mont_curr[x], mont_curr[x]);
+						}
 					}
 					modifyBit(s, i, newbit);
-					consecutive_errors++;
+					consecutive_errors = 2;
 					total_errors++;
 					i++;
 				}
