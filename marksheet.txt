@@ -60,7 +60,7 @@ generality, realism, or style of a solution.
               - solution quality wrt. efficiency, robustness etc.    ( 30%)
               - analysis questions                                   ( 30%)
 
-              target material : [...]
+              target material : 8B1FDDD8BAF619C91D5D76D68AF6AB0B
 
 [?] Stage 4 : an attack based on power consumption
               - correct target material                              ( 40%)
