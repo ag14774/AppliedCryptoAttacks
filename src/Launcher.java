@@ -50,8 +50,8 @@ public class Launcher {
 	}
 	
 	public static void usage(){
-		System.out.println("==USAGE==");
-		System.out.println("java -cp . Launcher <stage[1234]> <path to ${USER}.D> <path to ${USER}.conf>");
+		System.err.println("==USAGE==");
+		System.err.println("java -cp . Launcher <stage[1234]> <path to ${USER}.D> <path to ${USER}.conf>");
 	}
 
 	public static void main(String[] args) {
@@ -82,6 +82,7 @@ public class Launcher {
 			break;
 		default:
 			System.err.println("Illegal arguments!");
+			usage();
 			System.exit(-1);
 		}
 		

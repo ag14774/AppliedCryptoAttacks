@@ -3,7 +3,9 @@ import java.io.PrintWriter;
 
 public abstract class AbstractAttacker implements IAttacker {
 
-	/* Move these to AbstractAttacker */
+	
+	final private static char[] toHex = "0123456789ABCDEF".toCharArray();
+
 	protected BufferedReader target_out = null;
 	protected PrintWriter target_in = null;
 	protected int interactions;
@@ -16,7 +18,6 @@ public abstract class AbstractAttacker implements IAttacker {
 		this.interactions = 0;
 	}
 	
-	/*This in abstract class*/
 	@Override
 	public String getRecoveredMaterial() {
 		String s = "";
@@ -26,7 +27,6 @@ public abstract class AbstractAttacker implements IAttacker {
 		return s;
 	}
 
-	/*This is abstract class*/
 	@Override
 	public int getInteractions() {
 		return interactions;
@@ -34,5 +34,41 @@ public abstract class AbstractAttacker implements IAttacker {
 
 	@Override
 	abstract public void attack();
+	
+	public String intArrayToHex(int[] m) { //int array but represents an array of bytes. I WANT UNSIGNED TYPES!!!!
+		StringBuilder res = new StringBuilder();
+		for(int i = 0; i < m.length; i++) {
+			res.append(toHex[( m[i] >> 4 ) & 0x0F]);
+			res.append(toHex[( m[i]      ) & 0x0F]);
+		}
+		return res.toString();
+	}
+	
+	/*Byte array represented as int array*/
+	public int[] hexToIntArray(String hex) {
+		int[] res = new int[hex.length()/2];
+		for(int i = 0; i < hex.length(); i += 2) {
+			int left  = Character.digit(hex.charAt(i  ), 16) << 4;
+			int right = Character.digit(hex.charAt(i+1), 16);
+			res[i / 2] = (byte) 0xFF&(left + right);
+		}
+		return res;
+	}
+	
+	public int[] byteArrayToIntArray(byte[] arr) {
+		int[] res = new int[arr.length];
+		for(int i = 0;i<arr.length; i++){
+			res[i] = arr[i] & 0xFF;
+		}
+		return res;
+	}
+	
+	public byte[] intToByteArray(int[] arr) {
+		byte[] res = new byte[arr.length];
+		for(int i = 0;i<arr.length; i++){
+			res[i] = (byte) arr[i];
+		}
+		return res;
+	}
 
 }

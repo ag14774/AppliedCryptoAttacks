@@ -15,8 +15,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 public class FaultAttacker extends AbstractAttacker {
-
-	final private static char[] toHex = "0123456789ABCDEF".toCharArray();
 	
 	final private static int s_box[] = {
 		0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -148,25 +146,6 @@ public class FaultAttacker extends AbstractAttacker {
 		}
 	}
 	
-	private String intArrayToHex(int[] m) { //int array but represents an array of bytes. I WANT UNSIGNED TYPES!!!!
-		StringBuilder res = new StringBuilder();
-		for(int i = 0; i < 16; i++) {
-			res.append(toHex[( m[i] >> 4 ) & 0x0F]);
-			res.append(toHex[( m[i]      ) & 0x0F]);
-		}
-		return res.toString();
-	}
-	
-	private int[] hexToIntArray(String hex) {
-		int[] res = new int[16];
-		for(int i = 0; i < 32; i += 2) {
-			int left  = Character.digit(hex.charAt(i  ), 16) << 4;
-			int right = Character.digit(hex.charAt(i+1), 16);
-			res[i / 2] = (byte) 0xFF&(left + right);
-		}
-		return res;
-	}
-	
 	public int[] interact(int[] m, String fault) {
 		String message_hex = intArrayToHex(m);
 		this.target_in.println(fault);
@@ -179,22 +158,6 @@ public class FaultAttacker extends AbstractAttacker {
 			e.printStackTrace();
 		}
 		return m;
-	}
-	
-	private int[] byteArrayToIntArray(byte[] arr) {
-		int[] res = new int[arr.length];
-		for(int i = 0;i<arr.length; i++){
-			res[i] = arr[i] & 0xFF;
-		}
-		return res;
-	}
-	
-	private byte[] intToByteArray(int[] arr) {
-		byte[] res = new byte[arr.length];
-		for(int i = 0;i<arr.length; i++){
-			res[i] = (byte) arr[i];
-		}
-		return res;
 	}
 
 	private void filter_key_space(boolean intersect) {
