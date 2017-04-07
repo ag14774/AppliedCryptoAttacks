@@ -1,20 +1,72 @@
 Q.1 As a security consultant, you have been working on a prototype of the
-    attack target; before the product is deployed, the vendor is willing to
-    make any alteration necessary (in software or hardware) to prevent the
-    attack.  Explain the options available, and which one you would
+    attack target; before the product is deployed, the vendor is willing
+    to make any alteration necessary (in software or hardware) to prevent
+    the attack.  Explain the options available, and which one you would
     recommend.
+
+The aim of countermeasures against power attacks is to make the power
+consumption of the device independent of the intermediate values.
+-(software)Perform operations at different moments of time during each
+execution. Measured traces will be misaligned or even out of order.
+-(software)Random insertion of dummy operations during execution
+of algorithm. Dummy operations can be different each time. This
+decreases the efficiency of the algorithm.  -(software)Shuffle the
+s-box lookups randomly. This can make the attack harder to carry out,
+however integration as a preprocessing step can get around this measure.
+-(software)Randomize intermediate values(e.g. use boolean masking during
+ARK or precompute a masked SBox). As previously explained, this makes
+the power consumption independent of the actual intermediate values.
+-(hardware)Change power characteristic of device to reduce leakage.
+
+I would recommend a combination of the last two. Changes in hardware will
+make the attack harded to carry out because the device will leak less and
+therefore more traces will be required to execute the attack.  Randomizing
+intermediate values and masking(at random) each stage of AES will make
+it very hard for someone to carry out a first order DPA. Because of the
+added randomness, the attacker will need to somehow control the RNG.
+
 Q.2 The vendor of the attack target opts to replace the 8-bit Intel 8051
-    micro-processor with a modern, 32-bit ARM Cortex-M0; they supplement it
-    with hardware support for that allows single-cycle operations on 32
-    bits of the AES state.  Doing so will naturally reduce the latency of
-    encryption or decryption, but they *also* want to know if it might make
-    the device more secure wrt.  DPA attacks: what is your assessment, and
-    why ?
+    micro-processor with a modern, 32-bit ARM Cortex-M0; they supplement
+    it with hardware support for that allows single-cycle operations
+    on 32 bits of the AES state.  Doing so will naturally reduce the
+    latency of encryption or decryption, but they *also* want to know
+    if it might make the device more secure wrt.  DPA attacks: what is
+    your assessment, and why ?
+
+Because 32 bits of data will be processed at each cycle, our measurements
+will show the power consumption of those 32-bit operations. Our power
+model will need to change to measure the power consumption based on
+the hamming weight of 32-bit words of the state matrix instead of each
+byte. This means that a power attack will be much more inefficient
+because we need to test all 2^32 possible values for each group of 4
+bytes instead of only 256 values. However, 2^32 possibilities is still
+an improvement over plain brute-forcing of the AES key
+
 Q.6 Your implementation of this attack will target some operation during
     execution of AES.  Identify which operation you target, and explain
-    why.  Outline other operation(s) you could have targeted, and why they
-    might be a better or worse choice.
+    why.  Outline other operation(s) you could have targeted, and why
+    they might be a better or worse choice.
+
+For the attack on key2, our implementation targets the first s-box
+operation of AES-Enc. For key1, we attack the Inverse S-box operation
+of the last round.  Indeed, the best operation to attack is SubBytes
+because it is non-linear. Another possible operation to attack is
+AddRoundKeys. However, because it is linear, it is very easy for incorrect
+keys to match the measured power consumption(running some tests we can
+see that all keys achieve correlations between 0.3-0.9). Because of the
+non-linearity of SubBytes, small bit-level mistakes will propagate to
+the whole byte and as a result, incorrect key get correlations close to 0.
+
 Q.8 The vendor of the attack target decides to use AES-192 rather than
     AES-128; their argument is that longer keys will naturally improve
     security in general *and* vs.  DPA attacks.  Explain if and why you
     agree or disagree with this argument.
+
+I agree with the first part that AES-192 will naturally increase the
+security in general.  However, as long as we can measure the power
+consumption of operations on single bytes, adding 8 bytes to the key will
+not change a lot. Since the attack is carried on each byte separately, it
+will still require to test 256 possible hypotheses for each byte. AES-192
+will require 384-bit keys for the XTS mode which means the attacker
+only needs to attack each of the 48 bytes separately(which is not a
+significant improvement over the 32 bytes of the current implementation)
