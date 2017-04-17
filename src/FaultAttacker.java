@@ -3,11 +3,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
-
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -288,33 +287,43 @@ public class FaultAttacker extends AbstractAttacker {
 		}
 	}
 	
-	private void filter_key_space2() {
-		for(PartialKeyHypothesis h1 : hypEqSet1){
-			for(PartialKeyHypothesis h2 : hypEqSet2){
-				for(PartialKeyHypothesis h3 : hypEqSet3){
-					for(PartialKeyHypothesis h4 : hypEqSet4){
-						CompleteKeyHypothesis hyp = new CompleteKeyHypothesis(h1,h2,h3,h4);
-						if(hyp.isValid()) {
-							int[] key = inverseXKeyRounds(hyp.k,10,0);
-							try {
-								byte[] key_bytes = intToByteArray(key);
-								System.out.println("Testing key: " + intArrayToHex(key));
-								AES.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key_bytes, "AES"));
-								byte[] enc_test = AES.doFinal(this.msg);
-								if(Arrays.equals(enc_test, enc)){
-									System.out.println("Key recovered!");
-									this.recovered_bytes = intToByteArray(key);
-									return;
-								}
-							} catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-								e.printStackTrace();
-							}
-							
+	private void testHypothesis(PartialKeyHypothesis h1, PartialKeyHypothesis h2,
+								PartialKeyHypothesis h3, PartialKeyHypothesis h4) {
+		CompleteKeyHypothesis hyp = new CompleteKeyHypothesis(h1,h2,h3,h4);
+		if(hyp.isValid()) {
+			int[] key = inverseXKeyRounds(hyp.k,10,0);
+			try {
+				byte[] key_bytes = intToByteArray(key);
+				System.out.println(Thread.currentThread().getName() + " is testing key: " + intArrayToHex(key));
+				AES.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key_bytes, "AES"));
+				byte[] enc_test = AES.doFinal(this.msg);
+				if(Arrays.equals(enc_test, enc)){
+					System.out.println("Key recovered!");
+					this.recovered_bytes = intToByteArray(key);
+					return;
+				}
+			} catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+				e.printStackTrace();
+			}
+			
+		}
+	}
+	
+	Callable<Void> createCallable(int startIndex, int endIndex, PartialKeyHypothesis[] outer) {
+		return () -> {
+			for(int k = startIndex; k<endIndex; k++){
+				PartialKeyHypothesis h1 = outer[k];
+				for(PartialKeyHypothesis h2 : hypEqSet2){
+					for(PartialKeyHypothesis h3 : hypEqSet3){
+						for(PartialKeyHypothesis h4 : hypEqSet4){
+							testHypothesis(h1, h2, h3, h4);
+							if(this.recovered_bytes != null) return null;
 						}
 					}
 				}
 			}
-		}
+			return null;
+		};
 	}
 	
 	@Override
@@ -343,7 +352,28 @@ public class FaultAttacker extends AbstractAttacker {
 		}
 	    
 		System.out.println("Brute-forcing key...Please wait..This might take a while..");
-		filter_key_space2();
+		int cores = Runtime.getRuntime().availableProcessors();
+		System.out.println("Using " + cores + " core(s)..");
+		ExecutorService executor = Executors.newFixedThreadPool(cores);
+		PartialKeyHypothesis outer[] = new PartialKeyHypothesis[hypEqSet1.size()];
+		outer = hypEqSet1.toArray(outer);
+		int workPerCore = outer.length / cores;
+		List<Callable<Void>> todo = new ArrayList<Callable<Void>>(cores);
+		for(int i = 0; i<cores; i++){
+			int startIndex = i*workPerCore;
+			int endIndex = startIndex + workPerCore;
+			if(i == cores - 1)
+				endIndex = outer.length;
+			todo.add(createCallable(startIndex, endIndex, outer));
+		}
+
+		try {
+			executor.invokeAll(todo);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		executor.shutdown();
 
 	}
 	

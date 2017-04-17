@@ -29,7 +29,7 @@ Q.2 Outline the methods available for hardening this AES implementation
 Assuming that we can only introduce one fault per interaction, the
 algorithm can be modified to execute each instruction twice or three times
 to detect or even correct faults. This works because it is really hard
-to insert faults into consecutive instructions, however it will obviously
+to insert faults into consecutive instructions; however it will obviously
 increase the running time of the algorithm. It should be noted that if we
 can insert more than 1 fault per interaction then running the algorithm
 2 or 3 times and comparing the final results is not enough, since there
