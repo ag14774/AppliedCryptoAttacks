@@ -112,4 +112,6 @@ j is always 0 therefore we do not need to compute a^j.
 The first 3000 elements of each trace list were used to attack the first AES.
 Similarly, the last 3000 elements of each trace list were used to attack the
 second AES.
+The first AES is attacked during the first round while the second one is attacked
+during the last.
 -------------------------------------------------------------------------------
